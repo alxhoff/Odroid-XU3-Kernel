@@ -1,27 +1,19 @@
 #!/bin/sh
 
-KERNEL_DIR=./kernel/hardkernel/odroidxu3
+ROOT_DIR="/home/foo/Android7.1/Android_source/kernel/hardkernel/odroidxu3"
 
-while [ "$1" != "" ]; do
-    case $1 in
-		-s | --device)  		shift
-								ANDROID_DEVICE="-s $1"
-								;;
-		-b | --build-kernel)	BUILD=1
-								;;
-        * )  					;;
-    esac
-    shift
-done
-
-if [ ! -z $BUILD ]; then
-	./build_rcs.sh odroidxu3 kernel
+if [ $# -eq 0 ]
+then
+    echo "Please specify board (odroidxu3 ;) )"
+    exit 0
 fi
 
-./install_libs.sh "$ANDROID_DEVICE"
+PRODUCT_BOARD=$1
+
+ROOT_DIR/install_libs.sh "$ANDROID_DEVICE"
 
 adb $ANDROID_DEVICE reboot fastboot
 
-fastboot flash kernel $KERNEL_DIR/arch/arm/boot/zImage-dtb
+fastboot flash kernel $ROOT_DIR/arch/arm/boot/zImage-dtb
 
 fastboot reboot
