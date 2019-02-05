@@ -192,7 +192,7 @@ struct binder_transaction_log_entry {
 struct binder_transaction_log {
 	int next;
 	int full;
-	struct binder_transaction_log_entry entry[32];
+	struct binder_transaction_log_entry entry[200];
 };
 static struct binder_transaction_log binder_transaction_log;
 static struct binder_transaction_log binder_transaction_log_failed;
@@ -3610,11 +3610,23 @@ static int binder_proc_show(struct seq_file *m, void *unused)
 	return 0;
 }
 
+static unsigned long long ns2usecs(u64 nsec)
+{
+	nsec += 500;
+	do_div(nsec, 1000);
+	return nsec;
+}
+
 static void print_binder_transaction_log_entry(struct seq_file *m,
 					struct binder_transaction_log_entry *e)
 {
+    unsigned long long t;
+    unsigned long usec_rem; 
+    t = ns2usecs(sched_clock());
+    usec_rem = do_div(t, USEC_PER_SEC); 
 	seq_printf(m,
-		   "%d: %s from %d:%d to %d:%d node %d handle %d size %d:%d\n",
+		   "%5llu.%06lu %d: %s from %d:%d to %d:%d node %d handle %d size %d:%d\n",
+           t, usec_rem,
 		   e->debug_id, (e->call_type == 2) ? "reply" :
 		   ((e->call_type == 1) ? "async" : "call "), e->from_proc,
 		   e->from_thread, e->to_proc, e->to_thread, e->to_node,
