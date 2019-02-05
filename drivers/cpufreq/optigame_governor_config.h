@@ -1,0 +1,6 @@
+#ifndef OPTIGAME_GOVERNOR_CONFIG
+#define OPTIGAME_GOVERNOR_CONFIG
+
+
+#endif
+

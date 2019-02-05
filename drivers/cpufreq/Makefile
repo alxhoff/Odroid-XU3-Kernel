@@ -11,6 +11,13 @@ obj-$(CONFIG_CPU_FREQ_GOV_ONDEMAND)	+= cpufreq_ondemand.o
 obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)	+= cpufreq_conservative.o
 obj-$(CONFIG_CPU_FREQ_GOV_INTERACTIVE)	+= cpufreq_interactive.o
 obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
+obj-$(CONFIG_CPU_FREQ_GOV_OPTIGAME)     += optigame_governor.o \
+										optigame_governor_sched.o \
+										optigame_governor_stats.o
+ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -Idrivers/gpu/arm/midgard
+ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -DSOC_NAME=5422
+ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -DMALI_CUSTOMER_RELEASE=1
+
 
 # CPUfreq cross-arch helpers
 obj-$(CONFIG_CPU_FREQ_TABLE)		+= freq_table.o

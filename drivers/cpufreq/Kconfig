@@ -53,6 +53,12 @@ choice
 	  This option sets which CPUFreq governor shall be loaded at
 	  startup. If in doubt, select 'performance'.
 
+config CPU_FREQ_DEFAULT_GOV_OPTIGAME
+    bool "optigame"
+    select CPUT_FREQ_GOV_OPTIGAME
+    help
+      User the CPUFreq governor 'optigame' as default  
+
 config CPU_FREQ_DEFAULT_GOV_PERFORMANCE
 	bool "performance"
 	select CPU_FREQ_GOV_PERFORMANCE
@@ -169,6 +175,14 @@ config CPU_FREQ_GOV_ONDEMAND
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
+
+config CPU_FREQ_GOV_OPTIGAME
+    tristate "'optigame' cpufreq governor"
+    depends on CPU_FREQ
+    help
+     'optigame' - optimized for games
+
+     If in doubt, say N. 
 
 config CPU_FREQ_GOV_INTERACTIVE
 	tristate "'interactive' cpufreq policy governor"
