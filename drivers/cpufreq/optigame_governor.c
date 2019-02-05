@@ -11,7 +11,7 @@
 #include <linux/slab.h>
 #include <linux/sysfs.h>
 #include <linux/of.h>
-#include <linux/of_i2c.h>
+#include <linux/i2c.h>
 #include <linux/tick.h>
 #include <linux/types.h>
 #include <linux/cpu.h>
