@@ -192,7 +192,7 @@ struct binder_transaction_log_entry {
 struct binder_transaction_log {
 	int next;
 	int full;
-	struct binder_transaction_log_entry entry[200];
+	struct binder_transaction_log_entry entry[10000];
 };
 static struct binder_transaction_log binder_transaction_log;
 static struct binder_transaction_log binder_transaction_log_failed;

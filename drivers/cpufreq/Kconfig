@@ -184,6 +184,13 @@ config CPU_FREQ_GOV_OPTIGAME
 
      If in doubt, say N. 
 
+config CPU_FREQ_SYS_LOGGER 
+    tristate "'sys_logger' tracer"
+    help
+     'sys_logger' - to help with tracing the kernel
+
+     If in doubt, say N. 
+
 config CPU_FREQ_GOV_INTERACTIVE
 	tristate "'interactive' cpufreq policy governor"
 	help

@@ -2,6 +2,8 @@
 obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o cpu_load_metric.o
 # CPUfreq stats
 obj-$(CONFIG_CPU_FREQ_STAT)             += cpufreq_stats.o
+ 
+obj-$(CONFIG_CPU_FREQ_SYS_LOGGER) = syslogger.o
 
 # CPUfreq governors 
 obj-$(CONFIG_CPU_FREQ_GOV_PERFORMANCE)	+= cpufreq_performance.o
