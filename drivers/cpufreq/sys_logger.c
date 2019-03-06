@@ -141,11 +141,11 @@ static void __log_cpu_freq(void)
 	__log_cpu_freq_cpu(4);
 }
 
-static struct file *file_open(const char *path)
+static struct file *file_open_rdonly(const char *path)
 {
 	struct file *f;
 
-	f = filp_open(path, O_RDWR, 0);
+	f = filp_open(path, O_RDONLY, 0);
 	if (IS_ERR(f))
 		return NULL;
 
@@ -159,7 +159,7 @@ static struct file *open_ina231(const char *path)
 	struct file *f;
 	int ret;
 
-	f = file_open(path);
+	f = file_open_rdonly(path);
 	if (!f)
 		return NULL;
 
@@ -394,11 +394,11 @@ static int __init init(void)
 		gpu_ina231 = open_ina231("/dev/sensor_g3d");
 	}
 	if (log_mali) {
-		mali_load = file_open("/sys/bus/platform/drivers/mali/11800000.mali/utilization");
-		mali_freq = file_open("/sys/bus/platform/drivers/mali/11800000.mali/clock");
+		mali_load = file_open_rdonly("/sys/bus/platform/drivers/mali/11800000.mali/utilization");
+		mali_freq = file_open_rdonly("/sys/bus/platform/drivers/mali/11800000.mali/clock");
 	}
 	if (log_exynos_temp)
-		exynos_temp = file_open("/sys/devices/10060000.tmu/temp");
+		exynos_temp = file_open_rdonly("/sys/devices/10060000.tmu/temp");
 	if (log_net_stats)
 		net_dev = dev_get_by_name(&init_net, "eth0");
 
