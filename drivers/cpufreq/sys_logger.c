@@ -14,7 +14,7 @@
 
 #include "ina231-misc.h"
 #define CREATE_TRACE_POINTS
-#include "trace.h"
+#include "syslogger_trace.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("David Hildenbrand");

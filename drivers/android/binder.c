@@ -2731,6 +2731,9 @@ out:
 	return ret;
 }
 
+#define KERNEL_DEBUG_MSG(...) \
+            do { printk(KERN_INFO __VA_ARGS__); } while (0)
+
 static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int ret;
@@ -2754,6 +2757,10 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		ret = -ENOMEM;
 		goto err;
 	}
+    
+    if (thread->pid == 0)
+        KERNEL_DEBUG_MSG("Transaction with thread == 0" );
+
 
 	switch (cmd) {
 	case BINDER_WRITE_READ:
