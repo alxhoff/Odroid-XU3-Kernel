@@ -57,7 +57,8 @@ static	DEVICE_ATTR(enable, S_IRWXUGO, show_enable, set_enable);
 
 //[*]--------------------------------------------------------------------------------------------------[*]
 static	ssize_t show_period 		(struct device *dev, struct device_attribute *attr, char *buf);
-static	DEVICE_ATTR(update_period, S_IRWXUGO, show_period, NULL);
+static  ssize_t set_period      (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+static	DEVICE_ATTR(update_period, S_IRWXUGO, show_period, set_period);
 
 //[*]--------------------------------------------------------------------------------------------------[*]
 //[*]--------------------------------------------------------------------------------------------------[*]
@@ -185,6 +186,20 @@ static 	ssize_t show_period     (struct device *dev, struct device_attribute *at
 	struct ina231_sensor 	*sensor = dev_get_drvdata(dev);
 	
 	return	sprintf(buf, "%d usec\n", sensor->pd->update_period);
+}
+
+static  ssize_t set_period      (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    struct ina231_sensor    *sensor = dev_get_drvdata(dev);
+
+    sensor->pd->update_period = simple_strtol(buf, NULL, 10);
+    sensor->timer_sec  = sensor->pd->update_period / 1000000;
+    sensor->timer_nsec = sensor->pd->update_period % 1000000;
+    sensor->timer_nsec = sensor->timer_nsec * 1000;
+
+    hrtimer_start(&sensor->timer, ktime_set(sensor->timer_sec, sensor->timer_nsec), HRTIMER_MODE_REL);
+
+    return count;
 }
 
 //[*]--------------------------------------------------------------------------------------------------[*]
