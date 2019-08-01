@@ -309,7 +309,7 @@ static void __log_iteration_start(void)
 	 * event), this allows to map events to actual mon/real times.
 	 */
     getrawmonotonic(&raw); 
-    raw.tv_sec += 27;
+    /** raw.tv_sec += 27; */
 	getnstimeofday(&real);
 	trace_iteration(&raw, &real);
 }
