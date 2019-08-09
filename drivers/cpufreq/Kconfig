@@ -59,6 +59,12 @@ config CPU_FREQ_DEFAULT_GOV_OPTIGAME
     help
       User the CPUFreq governor 'optigame' as default  
 
+config CPU_FREQ_DEFAULT_GOV_GAMEGOVERNOR
+    bool "gamegovernor"
+    select CPU_FREQ_GOV_GAMEGOVERNOR
+    help
+      Use the CPUFreq governor 'gamegovernor' as default.
+
 config CPU_FREQ_DEFAULT_GOV_PERFORMANCE
 	bool "performance"
 	select CPU_FREQ_GOV_PERFORMANCE
@@ -183,6 +189,12 @@ config CPU_FREQ_GOV_OPTIGAME
      'optigame' - optimized for games
 
      If in doubt, say N. 
+
+config CPU_FREQ_GOV_GAMEGOVERNOR
+    tristate "'gamegovernor' cpufreq governor"
+    depends on CPU_FREQ
+    help
+      'gamegovernor' - a frame and thread based governor optimized for games!
 
 config CPU_FREQ_SYS_LOGGER 
     tristate "'sys_logger' tracer"

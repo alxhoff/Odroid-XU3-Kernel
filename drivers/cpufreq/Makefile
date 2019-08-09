@@ -4,7 +4,6 @@ obj-$(CONFIG_CPU_FREQ)			+= cpufreq.o cpu_load_metric.o
 obj-$(CONFIG_CPU_FREQ_STAT)             += cpufreq_stats.o
  
 obj-$(CONFIG_CPU_FREQ_SYS_LOGGER) = sys_logger.o
-
 # CPUfreq governors 
 obj-$(CONFIG_CPU_FREQ_GOV_PERFORMANCE)	+= cpufreq_performance.o
 obj-$(CONFIG_CPU_FREQ_GOV_POWERSAVE)	+= cpufreq_powersave.o
@@ -19,7 +18,9 @@ obj-$(CONFIG_CPU_FREQ_GOV_OPTIGAME)     += optigame_governor.o \
 ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -Idrivers/gpu/arm/midgard
 ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -DSOC_NAME=5422
 ccflags-$(CONFIG_CPU_FREQ_GOV_OPTIGAME) += -DMALI_CUSTOMER_RELEASE=1
-
+# gamegovernor
+obj-$(CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR)        += cpufreq_gamegovernor.o
+obj-$(CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR)        += cpufreq_gamegovernor_helper_functions.o
 
 # CPUfreq cross-arch helpers
 obj-$(CONFIG_CPU_FREQ_TABLE)		+= freq_table.o

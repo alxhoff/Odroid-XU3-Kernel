@@ -55,6 +55,17 @@ struct sched_param {
 
 #include <asm/processor.h>
 
+// dominiksgov related includes
+#ifdef CONFIG_CPU_FREQ_GOV_DOMINIKSGOV
+#include <dominiksgov/cpufreq_dominiksgov_sched.h>
+#endif // CONFIG_CPU_FREQ_GOV_DOMINIKSGOV
+
+// gamegovernor related includes
+#ifdef CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR
+#include <gamegovernor/cpufreq_gamegovernor_sched.h>
+#endif // CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR
+
+
 struct exec_domain;
 struct futex_pi_state;
 struct robust_list_head;
@@ -1060,8 +1071,13 @@ enum perf_event_task_context {
 };
 
 struct task_struct {
+#if defined(CONFIG_CPU_FREQ_GOV_DOMINIKSGOV) || defined(CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR)
+    task_struct_expansion *task_informations;
+    short task_struct_expansion_is_initialized;
+#endif // CONFIG_CPU_FREQ_GOV_DOMINIKSGOV || CONFIG_CPU_FREQ_GOV_GAMEGOVERNOR
+
 	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
-	void *stack;
+    void *stack;
 	atomic_t usage;
 	unsigned int flags;	/* per process flags, defined below */
 	unsigned int ptrace;
@@ -1140,13 +1156,16 @@ struct task_struct {
 	/* Used for emulating ABI behavior of previous Linux versions */
 	unsigned int personality;
 
-	unsigned did_exec:1;
-	unsigned in_execve:1;	/* Tell the LSMs that the process is doing an
+    unsigned did_exec:1;
+    unsigned in_execve:1;	/* Tell the LSMs that the process is doing an
 				 * execve */
-	unsigned in_iowait:1;
+    unsigned in_iowait:1;
+    
+    /* task may not gain privileges */
+    unsigned no_new_privs:1;
 
-	/* Revert to default priority/policy when forking */
-	unsigned sched_reset_on_fork:1;
+    /* Revert to default priority/policy when forking */
+    unsigned sched_reset_on_fork:1;
 	unsigned sched_contributes_to_load:1;
 
 	unsigned long atomic_flags; /* Flags needing atomic access. */
@@ -1168,9 +1187,9 @@ struct task_struct {
 	/*
 	 * children/sibling forms the list of my natural children
 	 */
-	struct list_head children;	/* list of my children */
-	struct list_head sibling;	/* linkage in my parent's children list */
-	struct task_struct *group_leader;	/* threadgroup leader */
+    struct list_head children;	/* list of my children */
+    struct list_head sibling;	/* linkage in my parent's children list */
+    struct task_struct *group_leader;	/* threadgroup leader */
 
 	/*
 	 * ptraced is the list of tasks this task is using ptrace on.
