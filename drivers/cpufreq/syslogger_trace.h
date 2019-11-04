@@ -3,6 +3,10 @@
 
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM sys_logger
+<<<<<<< Updated upstream
+=======
+//TODO fix this VV
+>>>>>>> Stashed changes
 #define TRACE_INCLUDE_PATH /home/alxhoff/Work/Optigame/android_builds/voodik/Android_7.1/android_source_xu3_Android7.1/kernel/hardkernel/odroidxu3/drivers/cpufreq
 #undef TRACE_INCLUDE_FILE
 #define TRACE_INCLUDE_FILE syslogger_trace
