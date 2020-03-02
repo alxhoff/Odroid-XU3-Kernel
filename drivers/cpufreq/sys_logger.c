@@ -1,9 +1,13 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/init.h>
 #include <linux/ktime.h>
+#include <linux/cdev.h>
 #include <linux/hrtimer.h>
 #include <linux/sched.h>
+#include <linux/device.h>
+#include <linux/errno.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/kernel_stat.h>
@@ -21,6 +25,9 @@
 
 #define FIRST_MINOR     0
 #define MINOR_CNT   1
+
+#define KERNEL_ERROR_MSG(...) \             
+    do { if (1) printk(KERN_ERR __VA_ARGS__); } while (0)
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("David Hildenbrand");
@@ -114,7 +121,7 @@ static struct file_operations syslog_EGL_fops =
 #else 
     .unlocked_ioctl = syslog_EGL_ioctl,
 #endif
-}
+};
 
 static int param_set_enabled(const char *val, const struct kernel_param *kp)
 {
@@ -143,7 +150,7 @@ static int param_set_enabled(const char *val, const struct kernel_param *kp)
 static int IOctlInit(void)
 {
     int ret;
-    struct device dev_ret;
+    struct device *dev_ret;
 
     if((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, EGL_SYSLOGGER_NAME)))
         return ret;
@@ -172,11 +179,11 @@ static int IOctlInit(void)
     return 0;
 }
 
-static void IOcrlExit(void)
+static void IOctlExit(void)
 {
     device_destroy(cl, dev);
     class_destroy(cl);
-    cdev_dev(&c_dev);
+    cdev_del(&c_dev);
     unregister_chrdev_region(dev, MINOR_CNT);
 }
 
@@ -475,9 +482,9 @@ static long syslog_EGL_ioctl(struct file *f, unsigned int cmd, unsigned long arg
         case IOCTL_EGL_LOG_FRAME:
             if(copy_from_user(&lf, (struct EGLLogFrame *)arg, sizeof(struct EGLLogFrame))){
                 KERNEL_ERROR_MSG("Syslog|ERROR: Copy from used failed\n");
-                return -EACCESS;
+                return -EACCES;
             }
-            __log_opengl_frame(lf);         
+            __log_opengl_frame(&lf);         
         break;
         default: return -EINVAL;
     }
@@ -540,7 +547,7 @@ static void __exit cleanup(void)
 	printk("Average runtime: %lld ns\n", sum_time);
 	printk("Max runtime: %lld ns\n", max_time);
 
-    IOcrlExit();
+    IOctlExit();
 }
 
 module_init(init);

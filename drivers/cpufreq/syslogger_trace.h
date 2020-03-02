@@ -3,7 +3,7 @@
 
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM sys_logger
-#define TRACE_INCLUDE_PATH .
+#define TRACE_INCLUDE_PATH ../../drivers/cpufreq
 #undef TRACE_INCLUDE_FILE
 #define TRACE_INCLUDE_FILE syslogger_trace
 
