@@ -9,7 +9,8 @@
 #
 # Normal rules (sorted alphabetically)
 #
-arch/arm/boot
+arch/arm/boot/*
+scripts/mod/modpost
 .*
 *.a
 *.asn1.[ch]
