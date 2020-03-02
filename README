@@ -1,4 +1,9 @@
-        Linux kernel release 3.x <http://kernel.org/>
+# Odroid XU3
+
+There are scripts to both [build](build_kernel.sh) and [install](install_kernel.sh) the kernel to a standard Odroid XU3 board.
+      
+# Linux README
+       Linux kernel release 3.x <http://kernel.org/>
 
 These are the release notes for Linux version 3.  Read them carefully,
 as they tell you what this is all about, explain how to install the
