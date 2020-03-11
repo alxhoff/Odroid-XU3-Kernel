@@ -21,12 +21,21 @@ TRACE_EVENT(iteration, TP_PROTO(struct timespec *raw, struct timespec *real),
 			   __entry->real = timespec_to_ns(real);),
 	    TP_printk("raw: %llu, real: %llu", __entry->raw, __entry->real));
 
-TRACE_EVENT(opengl_frame, TP_PROTO(unsigned int ts, unsigned int period),
-	    TP_ARGS(ts, period),
-	    TP_STRUCT__entry(__field(unsigned int, ts)
-				     __field(unsigned int, period)),
-	    TP_fast_assign(__entry->ts = ts; __entry->period = period;),
-	    TP_printk("ts: %u, period: %u", __entry->ts, __entry->period));
+TRACE_EVENT(opengl_frame,
+	    TP_PROTO(unsigned int ts, unsigned int period, unsigned int a15,
+		     unsigned int a7, unsigned int mem, unsigned int gpu),
+	    TP_ARGS(ts, period, a15, a7, mem, gpu),
+	    TP_STRUCT__entry(
+		    __field(unsigned int, ts) __field(unsigned int, period)
+			    __field(unsigned int, a15) __field(unsigned int, a7)
+				    __field(unsigned int, mem)
+					    __field(unsigned int, gpu)),
+	    TP_fast_assign(__entry->ts = ts; __entry->period = period;
+			   __entry->a15 = a15; __entry->a7 = a7;
+			   __entry->mem = mem; __entry->gpu = gpu),
+	    TP_printk("ts: %u, period: %u, a15: %u, a7: %u, mem: %u, gpu: %u",
+		      __entry->ts, __entry->period, __entry->a15, __entry->a7,
+		      __entry->mem, __entry->gpu));
 
 TRACE_EVENT(
 	cpu_info,

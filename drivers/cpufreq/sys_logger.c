@@ -14,6 +14,7 @@
 #include <linux/hrtimer.h>
 #include <linux/cpufreq.h>
 #include <linux/cpumask.h>
+#include <linux/miscdevice.h>
 #include <linux/netdevice.h>
 #include <linux/cdev.h>
 
@@ -23,11 +24,17 @@
 
 #include "EGLsyslog.h"
 
-#define FIRST_MINOR     0
-#define MINOR_CNT   1
+#define FIRST_MINOR 0
+#define MINOR_CNT 1
 
-#define KERNEL_ERROR_MSG(...) \             
-    do { if (1) printk(KERN_ERR __VA_ARGS__); } while (0)
+#define KERNEL_ERROR_MSG(...)                                                  \
+	\             
+    do                                                                         \
+	{                                                                      \
+		if (1)                                                         \
+			printk(KERN_ERR __VA_ARGS__);                          \
+	}                                                                      \
+	while (0)
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("David Hildenbrand");
@@ -44,7 +51,8 @@ MODULE_PARM_DESC(log_cpu_info, "Log CPU system/user/idle time and state");
 
 static bool __read_mostly log_cpu_freq = true;
 module_param(log_cpu_freq, bool, S_IRUGO);
-MODULE_PARM_DESC(log_cpu_freq, "Log CPU frequency for each first CPU in a policy group");
+MODULE_PARM_DESC(log_cpu_freq,
+		 "Log CPU frequency for each first CPU in a policy group");
 
 static bool __read_mostly log_ina231 = true;
 module_param(log_ina231, bool, S_IRUGO);
@@ -60,7 +68,8 @@ MODULE_PARM_DESC(log_net_stats, "Log network interface rx/tx stats.");
 
 static bool __read_mostly log_exynos_temp = true;
 module_param(log_exynos_temp, bool, S_IRUGO);
-MODULE_PARM_DESC(log_exynos_temp, "Log CPU and GPU temperature on Exynos boards.");
+MODULE_PARM_DESC(log_exynos_temp,
+		 "Log CPU and GPU temperature on Exynos boards.");
 
 static unsigned int __read_mostly cpu = 0;
 module_param(cpu, uint, S_IRUGO);
@@ -98,29 +107,38 @@ struct file *exynos_temp;
 
 struct net_device *net_dev;
 
-static dev_t dev;
-static struct cdev c_dev;
-static struct class *cl;
-
-static int syslog_EGL_open(struct inode *i, struct file *f){return 0;}
-static int syslog_EGL_close(struct inode *i, struct file *f){return 0;}
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
-static int syslog_EGL_ioctl(struct inode *i, struct file *f, 
-        unsigned int cmd, unsigned long arg);
-#else 
-static long syslog_EGL_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
-#endif
-
-static struct file_operations syslog_EGL_fops =
+static int syslog_EGL_open(struct inode *i, struct file *f)
 {
-    .owner = THIS_MODULE,
-    .open = syslog_EGL_open,
-    .release = syslog_EGL_close,
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
-    .ioctl = syslog_EGL_ioctl,
-#else 
-    .unlocked_ioctl = syslog_EGL_ioctl,
+	return 0;
+}
+static int syslog_EGL_close(struct inode *i, struct file *f)
+{
+	return 0;
+}
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35))
+static int syslog_EGL_ioctl(struct inode *i, struct file *f, unsigned int cmd,
+			    unsigned long arg);
+#else
+static long syslog_EGL_ioctl(struct file *f, unsigned int cmd,
+			     unsigned long arg);
 #endif
+
+static struct file_operations syslog_EGL_fops = {
+	.owner = THIS_MODULE,
+	.open = syslog_EGL_open,
+	.release = syslog_EGL_close,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35))
+	.ioctl = syslog_EGL_ioctl,
+#else
+	.unlocked_ioctl = syslog_EGL_ioctl,
+#endif
+};
+
+static struct miscdevice misc_dev = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = EGL_SYSLOGGER_NAME,
+	.fops = &syslog_EGL_fops,
+	.mode = 0666,
 };
 
 static int param_set_enabled(const char *val, const struct kernel_param *kp)
@@ -132,7 +150,7 @@ static int param_set_enabled(const char *val, const struct kernel_param *kp)
 		return -EINVAL;
 
 	ret = param_set_bool(val, kp);
-	if (ret < 0 )
+	if (ret < 0)
 		return ret;
 
 	if (old == enabled)
@@ -141,7 +159,7 @@ static int param_set_enabled(const char *val, const struct kernel_param *kp)
 	if (enabled) {
 		printk("Enabling sys_logger.\n");
 		hrtimer_start(&timer, ktime_set(0, interval * 1000000UL),
-		              HRTIMER_MODE_REL_PINNED);
+			      HRTIMER_MODE_REL_PINNED);
 	} else
 		printk("Disabling sys_logger.\n");
 	return ret;
@@ -149,47 +167,21 @@ static int param_set_enabled(const char *val, const struct kernel_param *kp)
 
 static int IOctlInit(void)
 {
-    int ret;
-    struct device *dev_ret;
+	int ret;
 
-    if((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, EGL_SYSLOGGER_NAME)))
-        return ret;
+	ret = misc_register(&misc_dev);
+	if (ret)
+		printk("Unable to register EGL IOctl misc dev\n");
+	printk("Misc dev registered\n");
 
-    cdev_init(&c_dev, &syslog_EGL_fops);
+	printk("EGL IOctl| init done\n");
 
-    if((ret = cdev_add(&c_dev, dev, MINOR_CNT)) < 0)
-        return ret;
-
-    if(IS_ERR( cl = class_create(THIS_MODULE, EGL_SYSLOGGER_NAME "char")))
-    {
-        cdev_del(&c_dev);
-        unregister_chrdev_region(dev, MINOR_CNT);
-        return PTR_ERR(cl);
-    }
-
-    if(IS_ERR(dev_ret = device_create(cl, NULL, dev, NULL, EGL_SYSLOGGER_NAME)))
-    {
-        class_destroy(cl);
-        cdev_del(&c_dev);
-        unregister_chrdev_region(dev, MINOR_CNT);
-        return PTR_ERR(cl);
-
-    }
-
-    return 0;
+	return 0;
 }
 
 static void IOctlExit(void)
 {
-    device_destroy(cl, dev);
-    class_destroy(cl);
-    cdev_del(&c_dev);
-    unregister_chrdev_region(dev, MINOR_CNT);
-}
-
-static void __log_opengl_frame(struct EGLLogFrame *lf)
-{
-    trace_opengl_frame(lf->frame_ts, lf->inter_frame_period);
+	misc_deregister(&misc_dev);
 }
 
 static void __log_cpu_info(void)
@@ -198,7 +190,7 @@ static void __log_cpu_info(void)
 	bool online;
 	int cpu;
 
-	for_each_possible_cpu(cpu) {
+	for_each_possible_cpu (cpu) {
 		online = cpu_online(cpu);
 
 		system = kcpustat_cpu(cpu).cpustat[CPUTIME_SYSTEM];
@@ -256,13 +248,15 @@ static struct file *open_ina231(const char *path)
 		goto out_error;
 
 	/* enable if necessary */
-	ret = f->f_op->unlocked_ioctl(f, INA231_IOCGSTATUS, (long unsigned int) &reg);
+	ret = f->f_op->unlocked_ioctl(f, INA231_IOCGSTATUS,
+				      (long unsigned int)&reg);
 	if (ret)
 		goto out_error;
 
 	if (!reg.enable) {
 		reg.enable = true;
-		ret = f->f_op->unlocked_ioctl(f, INA231_IOCSSTATUS, (long unsigned int) &reg);
+		ret = f->f_op->unlocked_ioctl(f, INA231_IOCSSTATUS,
+					      (long unsigned int)&reg);
 		if (ret)
 			goto out_error;
 	}
@@ -314,25 +308,33 @@ static unsigned int read_uW_ina231(struct file *f)
 		return 0;
 
 	set_fs(KERNEL_DS);
-	ret = f->f_op->unlocked_ioctl(f, INA231_IOCGREG, (long unsigned int) &reg);
+	ret = f->f_op->unlocked_ioctl(f, INA231_IOCGREG,
+				      (long unsigned int)&reg);
 	set_fs(old_fs);
 	if (ret)
 		return 0;
 	return reg.cur_uW;
 }
 
+static void __log_opengl_frame(struct EGLLogFrame *lf)
+{
+	trace_opengl_frame(lf->frame_ts, lf->inter_frame_period,
+			   read_uW_ina231(a15_ina231),
+			   read_uW_ina231(a7_ina231),
+			   read_uW_ina231(mem_ina231),
+			   read_uW_ina231(gpu_ina231));
+}
+
+
 static void __log_ina231(void)
 {
-	trace_ina231(read_uW_ina231(a15_ina231),
-		     read_uW_ina231(a7_ina231),
-		     read_uW_ina231(mem_ina231),
-		     read_uW_ina231(gpu_ina231));
+	trace_ina231(read_uW_ina231(a15_ina231), read_uW_ina231(a7_ina231),
+		     read_uW_ina231(mem_ina231), read_uW_ina231(gpu_ina231));
 }
 
 static void __log_mali(void)
 {
-	trace_mali(file_read_uint(mali_load),
-		   file_read_uint(mali_freq));
+	trace_mali(file_read_uint(mali_load), file_read_uint(mali_freq));
 }
 
 static int file_read(struct file *f, char *buf, int len)
@@ -396,8 +398,8 @@ static void __log_iteration_start(void)
 	/* Using the uptime clock for trace-cmd (to minimize overhead on every
 	 * event), this allows to map events to actual mon/real times.
 	 */
-    getrawmonotonic(&raw); 
-    /** raw.tv_sec += 27; */
+	getrawmonotonic(&raw);
+	/** raw.tv_sec += 27; */
 	getnstimeofday(&real);
 	trace_iteration(&raw, &real);
 }
@@ -469,25 +471,33 @@ enum hrtimer_restart logger_wakeup(struct hrtimer *timer)
 	return HRTIMER_RESTART;
 }
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
-static int syslog_EGL_ioctl(struct inode *i, struct file *f, 
-        unsigned int cmd, unsigned long arg)
-#else 
-static long syslog_EGL_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35))
+static int syslog_EGL_ioctl(struct inode *i, struct file *f, unsigned int cmd,
+			    unsigned long arg)
+#else
+static long syslog_EGL_ioctl(struct file *f, unsigned int cmd,
+			     unsigned long arg)
 #endif
 {
-    static struct EGLLogFrame lf;
+	static struct EGLLogFrame lf;
 
-    switch(cmd){
-        case IOCTL_EGL_LOG_FRAME:
-            if(copy_from_user(&lf, (struct EGLLogFrame *)arg, sizeof(struct EGLLogFrame))){
-                KERNEL_ERROR_MSG("Syslog|ERROR: Copy from used failed\n");
-                return -EACCES;
-            }
-            __log_opengl_frame(&lf);         
-        break;
-        default: return -EINVAL;
-    }
+	printk("In EGL IOctl");
+
+	switch (cmd) {
+	case IOCTL_EGL_LOG_FRAME:
+		if (copy_from_user(&lf, (struct EGLLogFrame *)arg,
+				   sizeof(struct EGLLogFrame))) {
+			KERNEL_ERROR_MSG(
+				"Syslog|ERROR: Copy from user failed\n");
+			return -EACCES;
+		}
+		__log_opengl_frame(&lf);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int __init init(void)
@@ -504,11 +514,14 @@ static int __init init(void)
 		gpu_ina231 = open_ina231("/dev/sensor_g3d");
 	}
 	if (log_mali) {
-		mali_load = file_open_rdonly("/sys/bus/platform/drivers/mali/11800000.mali/utilization");
-		mali_freq = file_open_rdonly("/sys/bus/platform/drivers/mali/11800000.mali/clock");
+		mali_load = file_open_rdonly(
+			"/sys/bus/platform/drivers/mali/11800000.mali/utilization");
+		mali_freq = file_open_rdonly(
+			"/sys/bus/platform/drivers/mali/11800000.mali/clock");
 	}
 	if (log_exynos_temp)
-		exynos_temp = file_open_rdonly("/sys/devices/10060000.tmu/temp");
+		exynos_temp =
+			file_open_rdonly("/sys/devices/10060000.tmu/temp");
 	if (log_net_stats)
 		net_dev = dev_get_by_name(&init_net, "eth0");
 
@@ -520,9 +533,10 @@ static int __init init(void)
 	hrtimer_init(&timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
 	timer.function = logger_wakeup;
 	if (enabled)
-		hrtimer_start(&timer, ktime_set(0, interval * 1000000UL), HRTIMER_MODE_REL_PINNED);
+		hrtimer_start(&timer, ktime_set(0, interval * 1000000UL),
+			      HRTIMER_MODE_REL_PINNED);
 
-    IOctlInit();
+	IOctlInit();
 
 	return 0;
 }
@@ -547,7 +561,7 @@ static void __exit cleanup(void)
 	printk("Average runtime: %lld ns\n", sum_time);
 	printk("Max runtime: %lld ns\n", max_time);
 
-    IOctlExit();
+	IOctlExit();
 }
 
 module_init(init);
