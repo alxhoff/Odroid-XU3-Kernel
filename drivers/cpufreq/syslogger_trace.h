@@ -21,28 +21,32 @@ TRACE_EVENT(iteration, TP_PROTO(struct timespec *raw, struct timespec *real),
 			   __entry->real = timespec_to_ns(real);),
 	    TP_printk("raw: %llu, real: %llu", __entry->raw, __entry->real));
 
-TRACE_EVENT(opengl_frame,
-	    TP_PROTO(unsigned int ts, unsigned int period, unsigned int a15,
-		     unsigned int a7, unsigned int mem, unsigned int gpu),
-	    TP_ARGS(ts, period, a15, a7, mem, gpu),
-	    TP_STRUCT__entry(
-		    __field(unsigned int, ts) __field(unsigned int, period)
-			    __field(unsigned int, a15) __field(unsigned int, a7)
-				    __field(unsigned int, mem)
-					    __field(unsigned int, gpu)),
-	    TP_fast_assign(__entry->ts = ts; __entry->period = period;
-			   __entry->a15 = a15; __entry->a7 = a7;
-			   __entry->mem = mem; __entry->gpu = gpu),
-	    TP_printk("ts: %u, period: %u, a15: %u, a7: %u, mem: %u, gpu: %u",
-		      __entry->ts, __entry->period, __entry->a15, __entry->a7,
-		      __entry->mem, __entry->gpu));
+TRACE_EVENT(
+	opengl_frame,
+	TP_PROTO(struct timespec *raw, struct timespec *user_space_ts,
+		 u64 period, u64 a15, u64 a7, u64 mem, u64 gpu),
+	TP_ARGS(raw, user_space_ts, period, a15, a7, mem, gpu),
+	TP_STRUCT__entry(__field(u64, raw) __field(u64, user_space_ts)
+				 __field(u64, ts) __field(u64, period)
+					 __field(u64, a15) __field(u64, a7)
+						 __field(u64, mem)
+							 __field(u64, gpu)),
+	TP_fast_assign(__entry->raw = timespec_to_ns(raw);
+		       __entry->user_space_ts = timespec_to_ns(user_space_ts);
+		       __entry->period = period; __entry->a15 = a15;
+		       __entry->a7 = a7; __entry->mem = mem;
+		       __entry->gpu = gpu),
+	TP_printk(
+		"raw ts: %llu, user space ts: %llu, period: %llu, a15: %llu, a7: %llu, mem: %llu, gpu: %llu",
+		__entry->raw, __entry->user_space_ts, __entry->period,
+		__entry->a15, __entry->a7, __entry->mem, __entry->gpu));
 
 TRACE_EVENT(
 	cpu_info,
-	TP_PROTO(unsigned char cpu, bool online, uint64_t system, uint64_t user,
+	TP_PROTO(u8 cpu, bool online, uint64_t system, uint64_t user,
 		 uint64_t idle),
 	TP_ARGS(cpu, online, system, user, idle),
-	TP_STRUCT__entry(__field(unsigned char, cpu) __field(bool, online)
+	TP_STRUCT__entry(__field(u8, cpu) __field(bool, online)
 				 __field(uint64_t, system)
 					 __field(uint64_t, user)
 						 __field(uint64_t, idle)),
@@ -53,41 +57,29 @@ TRACE_EVENT(
 		  __entry->cpu, __entry->online, __entry->system, __entry->user,
 		  __entry->idle));
 
-TRACE_EVENT(cpu_freq, TP_PROTO(unsigned char cpu, unsigned int freq),
-	    TP_ARGS(cpu, freq),
-	    TP_STRUCT__entry(__field(unsigned char, cpu)
-				     __field(unsigned int, freq)),
+TRACE_EVENT(cpu_freq, TP_PROTO(u8 cpu, u64 freq), TP_ARGS(cpu, freq),
+	    TP_STRUCT__entry(__field(u8, cpu) __field(u64, freq)),
 	    TP_fast_assign(__entry->cpu = cpu; __entry->freq = freq;),
 	    TP_printk("cpu: %u, frequency: %u", __entry->cpu, __entry->freq));
 
-TRACE_EVENT(ina231,
-	    TP_PROTO(unsigned int a15, unsigned int a7, unsigned int mem,
-		     unsigned int gpu),
+TRACE_EVENT(ina231, TP_PROTO(u64 a15, u64 a7, u64 mem, u64 gpu),
 	    TP_ARGS(a15, a7, mem, gpu),
-	    TP_STRUCT__entry(__field(unsigned int, a15) __field(unsigned int,
-								a7)
-				     __field(unsigned int, mem)
-					     __field(unsigned int, gpu)),
+	    TP_STRUCT__entry(__field(u64, a15) __field(u64, a7)
+				     __field(u64, mem) __field(u64, gpu)),
 	    TP_fast_assign(__entry->a15 = a15; __entry->a7 = a7;
 			   __entry->mem = mem; __entry->gpu = gpu;),
 	    TP_printk("a15: %u, a7: %u, mem: %u, gpu: %u", __entry->a15,
 		      __entry->a7, __entry->mem, __entry->gpu));
 
-TRACE_EVENT(mali, TP_PROTO(unsigned int load, unsigned int freq),
-	    TP_ARGS(load, freq),
-	    TP_STRUCT__entry(__field(unsigned int, load)
-				     __field(unsigned int, freq)),
+TRACE_EVENT(mali, TP_PROTO(u64 load, u64 freq), TP_ARGS(load, freq),
+	    TP_STRUCT__entry(__field(u64, load) __field(u64, freq)),
 	    TP_fast_assign(__entry->load = load; __entry->freq = freq;),
 	    TP_printk("load: %u, freq: %u", __entry->load, __entry->freq));
 
-TRACE_EVENT(exynos_temp,
-	    TP_PROTO(unsigned int t0, unsigned int t1, unsigned int t2,
-		     unsigned int t3, unsigned int t4),
+TRACE_EVENT(exynos_temp, TP_PROTO(u64 t0, u64 t1, u64 t2, u64 t3, u64 t4),
 	    TP_ARGS(t0, t1, t2, t3, t4),
-	    TP_STRUCT__entry(__field(unsigned int, t0) __field(unsigned int, t1)
-				     __field(unsigned int, t2)
-					     __field(unsigned int, t3)
-						     __field(unsigned int, t4)),
+	    TP_STRUCT__entry(__field(u64, t0) __field(u64, t1) __field(u64, t2)
+				     __field(u64, t3) __field(u64, t4)),
 	    TP_fast_assign(__entry->t0 = t0; __entry->t1 = t1; __entry->t2 = t2;
 			   __entry->t3 = t3; __entry->t4 = t4;),
 	    TP_printk("A15-0: %u, A15-1: %u, A15-2: %u, A15-3: %u, GPU: %u",

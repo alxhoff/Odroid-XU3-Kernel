@@ -318,7 +318,10 @@ static unsigned int read_uW_ina231(struct file *f)
 
 static void __log_opengl_frame(struct EGLLogFrame *lf)
 {
-	trace_opengl_frame(lf->frame_ts, lf->inter_frame_period,
+	struct timespec raw;
+	
+    getrawmonotonic(&raw);
+	trace_opengl_frame(&raw, &lf->frame_ts, lf->inter_frame_period,
 			   read_uW_ina231(a15_ina231),
 			   read_uW_ina231(a7_ina231),
 			   read_uW_ina231(mem_ina231),

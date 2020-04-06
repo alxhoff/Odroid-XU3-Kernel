@@ -2,6 +2,7 @@
 #define __EGLSYSLOG_H__
 
 #include <linux/ioctl.h>
+#include <linux/time.h>
 #include <linux/types.h>
 
 #define OPENGL_TARGET_FPS 30
@@ -11,10 +12,10 @@
 #define IOCTL_EGL_LOG_FRAME _IOW('g', 1, struct EGLLogFrame *)
 
 #define EGL_IOCTL_LOGGING
-#define LIMIT_FRAME_PERIOD
+// #define LIMIT_FRAME_PERIOD
 
 struct EGLLogFrame {
-	uint64_t frame_ts;
+	struct timespec frame_ts;
 	uint64_t inter_frame_period;
 };
 
