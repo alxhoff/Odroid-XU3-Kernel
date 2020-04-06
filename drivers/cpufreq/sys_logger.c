@@ -134,12 +134,39 @@ static struct file_operations syslog_EGL_fops = {
 #endif
 };
 
+bool dev_loaded = false;
 static struct miscdevice misc_dev = {
 	.minor = MISC_DYNAMIC_MINOR,
 	.name = EGL_SYSLOGGER_NAME,
 	.fops = &syslog_EGL_fops,
 	.mode = 0666,
 };
+
+static int IOctlInit(void)
+{
+	int ret;
+
+    if(dev_loaded == false){
+        ret = misc_register(&misc_dev);
+        if (ret)
+            printk("Unable to register EGL IOctl misc dev\n");
+        dev_loaded = true;
+        printk("Misc dev registered\n");
+    }
+
+	return 0;
+}
+
+static void IOctlExit(void)
+{
+    if(dev_loaded){
+	    misc_deregister(&misc_dev);
+        dev_loaded = false;
+    }
+	
+    printk("EGL IOctl| deinit done\n");
+
+}
 
 static int param_set_enabled(const char *val, const struct kernel_param *kp)
 {
@@ -158,30 +185,14 @@ static int param_set_enabled(const char *val, const struct kernel_param *kp)
 
 	if (enabled) {
 		printk("Enabling sys_logger.\n");
+        IOctlInit();
 		hrtimer_start(&timer, ktime_set(0, interval * 1000000UL),
 			      HRTIMER_MODE_REL_PINNED);
-	} else
+	} else{
+        IOctlExit();
 		printk("Disabling sys_logger.\n");
+    }
 	return ret;
-}
-
-static int IOctlInit(void)
-{
-	int ret;
-
-	ret = misc_register(&misc_dev);
-	if (ret)
-		printk("Unable to register EGL IOctl misc dev\n");
-	printk("Misc dev registered\n");
-
-	printk("EGL IOctl| init done\n");
-
-	return 0;
-}
-
-static void IOctlExit(void)
-{
-	misc_deregister(&misc_dev);
 }
 
 static void __log_cpu_info(void)
@@ -484,8 +495,6 @@ static long syslog_EGL_ioctl(struct file *f, unsigned int cmd,
 {
 	static struct EGLLogFrame lf;
 
-	printk("In EGL IOctl");
-
 	switch (cmd) {
 	case IOCTL_EGL_LOG_FRAME:
 		if (copy_from_user(&lf, (struct EGLLogFrame *)arg,
@@ -539,13 +548,13 @@ static int __init init(void)
 		hrtimer_start(&timer, ktime_set(0, interval * 1000000UL),
 			      HRTIMER_MODE_REL_PINNED);
 
-	IOctlInit();
-
+    printk(KERN_NOTICE "Syslogger loaded onto cpu %u with interval of %u ms\n", cpu, interval);
 	return 0;
 }
 
 static void __exit cleanup(void)
 {
+	IOctlExit();
 	hrtimer_cancel(&timer);
 	kthread_stop(logging_thread);
 
@@ -564,7 +573,6 @@ static void __exit cleanup(void)
 	printk("Average runtime: %lld ns\n", sum_time);
 	printk("Max runtime: %lld ns\n", max_time);
 
-	IOctlExit();
 }
 
 module_init(init);

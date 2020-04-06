@@ -34,8 +34,15 @@ struct 	misc_dev;
 #define CONVERSION_DELAY(x, y, z)   ((x + y) * z)
 
 #define INA231_CONFIG(x)            ((0x4000 | x) & 0xFFFF)
+#define INA231_CONFIG_AVERAGES(x)   ((0x0E00 & x) >> 9)
+#define INA231_CONFIG_VBUS_CT(x)    ((0x01C0 & x) >> 6)
+#define INA231_CONFIG_VSH_CT(x)     ((0x0038 & x) >> 3)
+#define INA231_CONFIG_MODE(x)       ((0x0007 & x) >> 0)
+
 //[*]--------------------------------------------------------------------------------------------------[*]
-enum    {
+#define INA231_NUM_AVERAGES 8
+
+enum eINA231_AVERAGES {
     eAVG_CON_1      = 1,
     eAVG_CON_4      = 4,
     eAVG_CON_16     = 16,
@@ -60,6 +67,8 @@ enum    {
 #define AVG_BIT(x)   (x << 9)
 
 //[*]--------------------------------------------------------------------------------------------------[*]
+#define INA231_NUM_VBUS_CT 8
+
 enum    {
     eVBUS_CON_140uS  = 140,
     eVBUS_CON_204uS  = 204,
@@ -85,6 +94,8 @@ enum    {
 #define VBUS_CT(x)  (x << 6)
 
 //[*]--------------------------------------------------------------------------------------------------[*]
+#define INA231_NUM_VSH_CT 8 
+
 enum    {
     eVSH_CON_140uS  = 140, 
     eVSH_CON_204uS  = 204, 
@@ -110,7 +121,7 @@ enum    {
 #define VSH_CT(x)  (x << 3)
 
 //[*]--------------------------------------------------------------------------------------------------[*]
-enum    {
+enum eINA231_MODE {
     ePOWER_DOWN1 = 0,
     eSHUNT_VOLT_TRIGGER,
     eBUS_VOLT_TRIGGER,
